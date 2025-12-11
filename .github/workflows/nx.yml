@@ -1,0 +1,47 @@
+name: NX Workspace Migration
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions: write-all
+
+jobs:
+  migrate:
+    name: "Migrate"
+    uses: tsok-org/.github/.github/workflows/nx-migrate.yml@main
+    with:
+      base_branch: ${{ github.ref_name }}
+      github_app_id: ${{ vars.OPERATOR_GITHUB_APPLICATION_ID }}
+      node_version_file: ".node-version"
+      channel: "beta"
+      branch_name_template: "update-nx-{version}"
+      commit_message_template: "build: 📦 update @nx/workspace to {version}"
+      create_pr: true
+      pr_title_template: "build: 📦 update Nx workspace to {version}"
+      pr_labels: "dependencies"
+      pr_auto_merge: true
+    secrets:
+      github_app_private_key: ${{ secrets.OPERATOR_GITHUB_APP_PRIVATE_KEY }}
+      nx_cloud_access_token: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
+  summary:
+    name: Summary
+    needs: [migrate]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check status
+        run: |
+          echo "## Migration Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.migrate.outputs.has_changes }}" == "true" ]; then
+            echo "✅ Migration completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Version:** ${{ needs.migrate.outputs.migration_version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **PR:** ${{ needs.migrate.outputs.pr_url }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ No migration needed - already on latest version" >> $GITHUB_STEP_SUMMARY
+          fi

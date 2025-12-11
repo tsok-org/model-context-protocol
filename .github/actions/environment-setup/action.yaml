@@ -1,0 +1,19 @@
+name: "Environment Setup"
+description: "Environment setup steps for MCP repository"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: ".node-version"
+        cache: "npm"
+
+    - name: Install Node Dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Rebuild native modules
+      shell: bash
+      run: npm rebuild
