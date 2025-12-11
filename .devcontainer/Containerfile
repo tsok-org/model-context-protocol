@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/devcontainers/typescript-node:dev-24-bullseye
+
+COPY certs/rootCA.pem /etc/ssl/certs/a-certificates.crt
+ENV CA_BUNDLE_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+RUN update-ca-certificates

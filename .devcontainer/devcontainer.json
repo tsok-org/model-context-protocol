@@ -1,0 +1,82 @@
+{
+  "name": "model-context-protocol",
+  "build": {
+    "dockerfile": "Containerfile",
+    "args": {
+      "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+      "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+      "http_proxy": "${localEnv:http_proxy}",
+      "https_proxy": "${localEnv:https_proxy}"
+    }
+  },
+  "forwardPorts": [3000, 4200, 8080],
+  "features": {
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+      "packages": "python-is-python3 gnupg2 libedit-dev xdg-utils"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/git-lfs:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24.3.0"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.13"
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17"
+    },
+    "ghcr.io/eitsupi/devcontainer-features/jq-likes:2": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.24"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "1.86"
+    },
+    "ghcr.io/joedmck/devcontainer-features/serve:1": {},
+    "ghcr.io/devcontainers-extra/features/gitsign:1": {},
+    "ghcr.io/devcontainers-extra/features/gitsign-credential-cache:1": {},
+    "ghcr.io/devcontainers-extra/features/cosign:1": {},
+    "ghcr.io/devcontainers-extra/features/pipx-package:1": {
+      "package": "poetry",
+      "injections": "poetry-plugin-export poetry-plugin-shell"
+    },
+    "ghcr.io/devcontainers-extra/features/gh-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
+      "plugins": "zsh-autosuggestions zsh-syntax-highlighting zsh-completions zsh-fzf-history-search git rust golang poetry poetry-env gh node npm vscode autoenv z virtualenv python vscode",
+      "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions.git https://github.com/zsh-users/zsh-syntax-highlighting.git https://github.com/zsh-users/zsh-completions.git https://github.com/joshskidmore/zsh-fzf-history-search.git https://github.com/agkozak/zsh-z.git"
+    }
+  },
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/python",
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages"
+  ],
+  "customizations": {
+    "devpod": {
+      "prebuildRepository": "ghcr.io/tsok-org/dev-container"
+    }
+  },
+  "containerEnv": {
+    "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+    "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+    "http_proxy": "${localEnv:http_proxy}",
+    "https_proxy": "${localEnv:https_proxy}",
+    "NO_PROXY": "localhost, host.docker.internal",
+    "no_proxy": "localhost, host.docker.internal",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8"
+  },
+  "remoteEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
+    "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+    "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+    "http_proxy": "${localEnv:http_proxy}",
+    "https_proxy": "${localEnv:https_proxy}",
+    "NO_PROXY": "localhost, host.docker.internal",
+    "no_proxy": "localhost, host.docker.internal",
+    "REQUESTS_CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt",
+    "CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt",
+    "NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt"
+  },
+  "onCreateCommand": "zsh ./.devcontainer/on-create.sh"
+}
