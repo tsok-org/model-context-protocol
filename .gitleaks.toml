@@ -1,0 +1,46 @@
+title = "gitleaks config"
+
+[extend]
+# if you later want to extend the built-in gitleaks config instead of redefining rules
+# leave empty or point at another config file/repo
+# url = ""
+
+[rules]
+# (we're relying on the built-in default rules from gitleaks,
+# so we don't manually redefine rules here)
+
+[allowlist]
+description = "Allowlist for paths and patterns we don't care about scanning"
+# NOTE: these are regexes.
+paths = [
+    '''(^|/)node_modules/''',
+    '''(^|/)\.venv/''',
+    '''(^|/)\.credentials/''',
+    '''(^|/)\.next/''',
+    '''(^|/)dist/''',
+    '''(^|/)\.nx/cache/''',
+    '''(^|/)coverage/''',
+    '''(^|/)tmp/''',
+    '''(^|/)docs/generated/''',
+    '''(^|/)\.devcontainer/certs/''',
+    '''(^|/)tests?/''',
+    '''\.test\.ts$''',
+    '''(^|/)\.env\.local$''',
+]
+
+[entropy]
+# Entropy rules help catch random-looking secrets that don't match a known regex.
+enable = true
+min = 3.5
+max = 8.0
+target = "line"
+
+[report]
+redact = true
+
+[log]
+level = "info"
+
+[[inspect]]
+path = "."
+type = "git"
