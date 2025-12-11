@@ -23,7 +23,7 @@ jobs:
       pr_labels: "dependencies"
       pr_auto_merge: true
     secrets:
-      github_app_private_key: ${{ secrets.OPERATOR_GITHUB_APP_PRIVATE_KEY }}
+      github_app_private_key: ${{ secrets.OPERATOR_GITHUB_APPLICATION_PRIVATE_KEY }}
       nx_cloud_access_token: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
   summary:
