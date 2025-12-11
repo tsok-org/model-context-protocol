@@ -1,0 +1,31 @@
+{
+  "name": "model-context-protocol-webrtc-transport",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/transports/webrtc-transport/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:swc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/transports/webrtc-transport",
+        "main": "packages/transports/webrtc-transport/src/index.ts",
+        "tsConfig": "packages/transports/webrtc-transport/tsconfig.lib.json",
+        "assets": ["packages/transports/webrtc-transport/*.md"]
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}
