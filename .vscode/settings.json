@@ -1,0 +1,59 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.next/**": true,
+    "**/node_modules/*/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/coverage/**": true,
+    "**/out/**": true,
+    "**/target/**": true,
+    "**/vendor/**": true,
+    "**/generated/**": true
+  },
+  "workbench.startupEditor": "readme",
+  "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": false,
+  "prettier.prettierPath": "./node_modules/prettier",
+  "editor.formatOnPaste": true,
+  "editor.formatOnType": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "files.autoSave": "onFocusChange",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "eslint.format.enable": true,
+  "[xml]": {
+    "editor.defaultFormatter": "DotJoshJohnson.xml"
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.autopep8"
+  },
+  "terminal.integrated.profiles.linux": {
+    "zsh": { "path": "/usr/bin/zsh", "args": ["-l"] }
+  },
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.scrollback": 20000,
+  "chat.tools.terminal.autoApprove": {
+    "/.*/": true
+  },
+  "chat.tools.edits.autoApprove": {
+    "**/*": true,
+    "**/.vscode/*.json": false,
+    "**/.git/**": false
+  },
+  "github.copilot.chat.newWorkspace.useContext7": true,
+  "terminal.integrated.suggest.enabled": true,
+  "yaml.validate": true,
+  "yaml.schemaStore.enable": true,
+  "chat.agent.maxRequests": 500,
+  "typescript.referencesCodeLens.enabled": true,
+  "editor.codeLens": true,
+  "accessibility.voice.keywordActivation": "chatInView"
+}

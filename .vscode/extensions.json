@@ -1,0 +1,29 @@
+{
+  "recommendations": [
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "ms-playwright.playwright",
+    "esbenp.prettier-vscode",
+    "firsttris.vscode-jest-runner",
+    "Orta.vscode-jest",
+    "dbaeumer.vscode-eslint",
+    "Prisma.prisma",
+    "GitHub.vscode-pull-request-github",
+    "GitHub.vscode-github-actions",
+    "bierner.markdown-preview-github-styles",
+    "bierner.markdown-mermaid",
+    "DotJoshJohnson.xml",
+    "ms-vsliveshare.vsliveshare",
+    "mutantdino.resourcemonitor",
+    "rioj7.command-variable",
+    "ms-azuretools.vscode-containers",
+    "ms-vscode.extension-test-runner",
+    "llvm-vs-code-extensions.lldb-dap",
+    "augustocdias.tasks-shell-input",
+    "piyush-bhatt.vscode-port",
+    "effectful-tech.effect-vscode",
+    "tldraw-org.tldraw-vscode",
+    "openai.chatgpt",
+    "pflannery.vscode-versionlens"
+  ]
+}
