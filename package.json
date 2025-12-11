@@ -1,0 +1,25 @@
+{
+  "name": "@tsok-org/model-context-protocol",
+  "version": "1.0.0",
+  "description": "Source code for Model Context Protocol implementation",
+  "homepage": "https://github.com/tsok-org/model-context-protocol#readme",
+  "bugs": {
+    "url": "https://github.com/tsok-org/model-context-protocol/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsok-org/model-context-protocol.git"
+  },
+  "license": "AGPLv3",
+  "author": "Andrii Tsok",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@nx/js": "^22.2.1",
+    "@swc-node/register": "~1.9.1",
+    "@swc/core": "~1.5.7",
+    "@swc/helpers": "~0.5.11",
+    "nx": "^22.2.1"
+  }
+}
