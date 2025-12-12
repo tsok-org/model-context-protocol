@@ -42,7 +42,7 @@
     }
   },
   "release": {
-    "projects": ["packages/*"],
+    "projects": ["packages/*", "packages/transports/*", "packages/transports/server/*", "packages/opentelemetry/*"],
     "projectsRelationship": "independent",
     "version": {
       "conventionalCommits": true,
