@@ -1,3 +1,22 @@
 {
-  "configurations": []
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug server with Nx",
+      "runtimeExecutable": "pnpm exec",
+      "runtimeArgs": ["nx", "serve", "server"],
+      "env": {
+        "NODE_OPTIONS": "--inspect=9229"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/dist/examples/server/**/*.(m|c|)js",
+        "!**/node_modules/**"
+      ]
+    }
+  ]
 }

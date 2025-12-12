@@ -75,6 +75,8 @@ override.tf.json
 *.tfplan
 .env.prod
 
+.env
+
 
 .vendor
 test-output
