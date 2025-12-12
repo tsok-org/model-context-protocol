@@ -4,6 +4,28 @@
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./client": {
+      "types": "./src/client/index.d.ts",
+      "require": "./src/client/index.js",
+      "default": "./src/client/index.js"
+    },
+    "./server": {
+      "types": "./src/server/index.d.ts",
+      "require": "./src/server/index.js",
+      "default": "./src/server/index.js"
+    },
+    "./protocol": {
+      "types": "./src/protocol/index.d.ts",
+      "require": "./src/protocol/index.js",
+      "default": "./src/protocol/index.js"
+    }
+  },
   "peerDependencies": {
     "zod": "^3.24.0 || ^4.0.0"
   },
