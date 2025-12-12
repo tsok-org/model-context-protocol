@@ -1,0 +1,31 @@
+{
+  "name": "model-context-protocol-opentelemetry-instrumentation",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/opentelemetry/instrumentation/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:swc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/opentelemetry/instrumentation",
+        "main": "packages/opentelemetry/instrumentation/src/index.ts",
+        "tsConfig": "packages/opentelemetry/instrumentation/tsconfig.lib.json",
+        "assets": ["packages/opentelemetry/instrumentation/*.md"]
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}
