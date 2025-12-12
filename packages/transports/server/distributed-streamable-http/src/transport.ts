@@ -100,9 +100,8 @@ interface TransportContext {
 /**
  * Extended send options for distributed routing.
  */
-interface DistributedSendOptions extends TransportSendOptions {
-  // requestId is already in TransportSendOptions as string | undefined
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface DistributedSendOptions extends TransportSendOptions {}
 
 /**
  * Configuration options for the transport.
