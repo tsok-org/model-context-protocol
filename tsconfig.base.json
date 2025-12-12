@@ -16,6 +16,9 @@
     "baseUrl": ".",
     "paths": {
       "model-context-protocol-sdk": ["packages/sdk/src/index.ts"],
+      "model-context-protocol-sdk/client": ["packages/sdk/src/client/index.ts"],
+      "model-context-protocol-sdk/server": ["packages/sdk/src/server/index.ts"],
+      "model-context-protocol-sdk/protocol": ["packages/sdk/src/protocol/index.ts"],
       "model-context-protocol-framework": ["packages/framework/src/index.ts"],
       "model-context-protocol-distributed-streamable-http-server-transport": [
         "packages/transports/server/distributed-streamable-http/src/index.ts"

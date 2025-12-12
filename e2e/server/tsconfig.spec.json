@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "types": [
+      "jest",
+      "node"
+    ]
+  },
+  "include": [
+    "jest.config.ts",
+    "src/**/*.ts"
+  ]
+}
