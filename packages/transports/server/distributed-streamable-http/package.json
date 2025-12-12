@@ -5,6 +5,6 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
-    "model-context-protocol-sdk": "*"
+    "model-context-protocol-sdk": "workspace:*"
   }
 }

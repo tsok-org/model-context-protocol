@@ -39,6 +39,6 @@
     }
   },
   "dependencies": {
-    "model-context-protocol-specification": "^0.1.2"
+    "model-context-protocol-specification": "workspace:*"
   }
 }
