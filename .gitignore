@@ -110,3 +110,5 @@ data/
 
 storybook-static
 .nx/installation
+
+.pnpm-store
