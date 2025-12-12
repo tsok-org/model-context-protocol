@@ -1,3 +1,13 @@
+## 0.1.5 (2025-12-12)
+
+### 🩹 Fixes
+
+- **sdk:** updated the version ([531d47d](https://github.com/tsok-org/model-context-protocol/commit/531d47d))
+
+### ❤️ Thank You
+
+- Andrii Tsok
+
 ## 0.1.4 (2025-12-12)
 
 ### 🚀 Features

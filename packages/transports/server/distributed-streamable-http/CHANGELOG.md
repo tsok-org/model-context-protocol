@@ -1,3 +1,9 @@
+## 0.1.4 (2025-12-12)
+
+### 🧱 Updated Dependencies
+
+- Updated model-context-protocol-sdk to 0.1.5
+
 ## 0.1.3 (2025-12-12)
 
 ### 🚀 Features
