@@ -27,11 +27,18 @@
     }
   },
   "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0",
     "zod": "^3.24.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": false
+    },
     "zod": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "model-context-protocol-specification": "^0.1.2"
   }
 }

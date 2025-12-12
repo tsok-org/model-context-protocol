@@ -1,5 +1,5 @@
 {
-  "name": "model-context-protocol",
+  "name": "model-context-protocol-specification",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/specification/src",
   "projectType": "library",

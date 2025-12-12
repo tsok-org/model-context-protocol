@@ -1,1 +1,2 @@
-export * from './lib/model-context-protocol';
+export * from './lib/schema';
+export * from './lib/zod';

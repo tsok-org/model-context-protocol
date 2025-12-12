@@ -1,11 +1,19 @@
 {
-  "name": "model-context-protocol",
+  "name": "model-context-protocol-specification",
   "version": "0.1.2",
-  "private": true,
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
-  "dependencies": {
-    "@swc/helpers": "~0.5.11"
+  "peerDependencies": {
+    "@standard-schema/spec": "^1.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@standard-schema/spec": {
+      "optional": false
+    },
+    "zod": {
+      "optional": false
+    }
   }
 }

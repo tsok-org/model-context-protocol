@@ -19,7 +19,7 @@ if (swcJestConfig.swcrc === undefined) {
 // swcJestConfig.module.noInterop = false;
 
 module.exports = {
-  displayName: 'model-context-protocol',
+  displayName: 'model-context-protocol-specification',
   preset: '../../jest.preset.js',
   transform: {
     '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig],

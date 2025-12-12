@@ -27,10 +27,19 @@ import type {
   Result
 } from "./types";
 
-import { ProtocolError, HandlerError, RequestTimeoutError, ConnectionClosedError, MethodNotFoundError, InternalError } from "./types";
+import {
+  ProtocolError,
+  HandlerError,
+  RequestTimeoutError,
+  ConnectionClosedError,
+  MethodNotFoundError,
+  InvalidRequestError,
+  InternalError
+} from "./types";
 
 import { IncomingMessageContext, IncomingMessageInfo, Transport } from "./transport.js";
 import { Connection } from "./connection.js";
+import type { SchemaResolver, SchemaResolverContext } from "./schema-validator";
 import { SchemaValidator } from "./schema-validator";
 import { Feature, FeatureContext } from "./feature";
 import { NoopLogger } from "./logger";
@@ -38,6 +47,7 @@ import { DefaultIdGenerator } from "./id";
 
 import {
   isCancelledNotification,
+  isJSONRPCMessage,
   isJSONRPCError,
   isJSONRPCNotification,
   isJSONRPCRequest,
@@ -85,6 +95,7 @@ type PendingRequest<
   readonly reject: (error: Error) => void;
   readonly onProgress?: (progress: Progress) => void;
   readonly requestId: RequestId;
+  readonly method: string;
   readonly connection: Connection<
     TIncomingRequest,
     TIncomingNotification,
@@ -137,6 +148,18 @@ export type ProtocolOptions<
   readonly schemaValidator?: SchemaValidator;
 
   /**
+   * Optional schema resolver to pick a Standard Schema for each message.
+   * If provided together with schemaValidator, messages can be validated end-to-end.
+   */
+  readonly schemaResolver?: SchemaResolver;
+
+  /**
+   * If true, missing schemas (when schemaResolver returns undefined) are treated as errors.
+   * Default: false.
+   */
+  readonly enforceSchemaValidation?: boolean;
+
+  /**
    * Whether to enforce strict capability checking.
    */
   readonly enforceStrictCapabilities?: boolean;
@@ -170,6 +193,8 @@ export class Protocol<
   protected readonly logger: Logger;
   protected readonly id: IdGenerator;
   protected readonly schemaValidator?: SchemaValidator;
+  protected readonly schemaResolver?: SchemaResolver;
+  protected readonly enforceSchemaValidation: boolean;
   private readonly connections = new Map<
     ConnectionId,
     Connection<TIncomingRequest, TIncomingNotification, TIncomingResult, TOutgoingRequest, TOutgoingNotification, TOutgoingResult, TContext>
@@ -210,6 +235,47 @@ export class Protocol<
     this.logger = options?.logger ?? new NoopLogger();
     this.id = options?.id ?? new DefaultIdGenerator();
     this.schemaValidator = options?.schemaValidator;
+    this.schemaResolver = options?.schemaResolver;
+    this.enforceSchemaValidation = options?.enforceSchemaValidation ?? false;
+  }
+
+  private async validateMessage(direction: "incoming" | "outgoing", message: JSONRPCMessage, context: SchemaResolverContext): Promise<void> {
+    if (!isJSONRPCMessage(message)) {
+      // Defensive: transports are untrusted, always validate the envelope.
+      throw new InvalidRequestError("Invalid JSON-RPC message", { direction, message });
+    }
+
+    // Enforce MCP method conventions: requests MUST NOT use notifications/* and notifications MUST use notifications/*.
+    if (isJSONRPCRequest(message) && message.method.startsWith("notifications/")) {
+      throw new InvalidRequestError("Invalid request method: requests must not start with notifications/", {
+        direction,
+        method: message.method
+      });
+    }
+    if (isJSONRPCNotification(message) && !message.method.startsWith("notifications/")) {
+      throw new InvalidRequestError("Invalid notification method: notifications must start with notifications/", {
+        direction,
+        method: message.method
+      });
+    }
+
+    if (!this.schemaValidator || !this.schemaResolver) {
+      return;
+    }
+
+    const schema = this.schemaResolver(message, context);
+    if (!schema) {
+      if (this.enforceSchemaValidation) {
+        throw new InvalidRequestError("Missing schema for message", {
+          direction,
+          requestMethod: context.requestMethod,
+          message
+        });
+      }
+      return;
+    }
+
+    await this.schemaValidator.validate(message, schema as never);
   }
 
   public registerHandler<T extends TIncomingRequest | TIncomingNotification>(
@@ -405,6 +471,9 @@ export class Protocol<
     const method = "method" in message ? (message as { method: string }).method : undefined;
     const isNotificationMethod = method?.startsWith("notifications/") ?? false;
 
+    // Validate outgoing envelope + optional schema.
+    await this.validateMessage("outgoing", message as unknown as JSONRPCMessage, { requestMethod: method });
+
     // TODO: Schema validation
     // === Notification path (simple, early return) ===
     if (isNotificationMethod) {
@@ -462,6 +531,7 @@ export class Protocol<
         resolve: resolve,
         reject,
         requestId: request.id, // TODO: Review?
+        method: request.method,
         connection,
         abortController,
         onProgress: options?.onProgress
@@ -526,6 +596,20 @@ export class Protocol<
     try {
       await this.onBeforeReceive(connection, message, context, info);
 
+      // Validate incoming envelope + optional schema.
+      // For responses/errors, we attempt to recover request method from pending requests (if any).
+      let requestMethod: string | undefined;
+      if (isJSONRPCResponse(message) || isJSONRPCError(message)) {
+        const sessionId = context.session?.id;
+        if (message.id !== null && message.id !== undefined) {
+          const key = mapRequestKey(connection.id, sessionId, message.id as RequestId);
+          requestMethod = this.pendingRequests.get(key)?.method;
+        }
+      } else if (isJSONRPCRequest(message) || isJSONRPCNotification(message)) {
+        requestMethod = message.method;
+      }
+      await this.validateMessage("incoming", message, { requestMethod });
+
       if (isJSONRPCResponse(message)) {
         this.resolve(connection, message, context, info);
       } else if (isJSONRPCError(message)) {
@@ -534,6 +618,8 @@ export class Protocol<
         await this.processRequest(connection, message, context, info);
       } else if (isJSONRPCNotification(message)) {
         await this.processNotification(connection, message, context, info);
+      } else {
+        throw new InvalidRequestError("Unsupported message type", { message });
       }
 
       await this.onAfterReceive(connection, message, context, info);
@@ -634,10 +720,7 @@ export class Protocol<
       return;
     }
 
-    const notification: TIncomingNotification = {
-      method: message.method,
-      params: message.params
-    } as TIncomingNotification;
+    const notification = message as unknown as TIncomingNotification;
 
     try {
       await this.handle(connection, notification, context, info);
@@ -710,7 +793,7 @@ export class Protocol<
 
     const error = message.error;
 
-    if (requestId) {
+    if (requestId !== null && requestId !== undefined) {
       const requestKey = mapRequestKey(connection.id, sessionId, requestId);
       this.reject(requestKey, error);
     }
