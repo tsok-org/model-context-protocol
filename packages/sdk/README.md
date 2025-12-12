@@ -1,231 +1,518 @@
-# Model Context Protocol SDK (TypeScript)
+# Model Context Protocol SDK
 
-This package provides a TypeScript SDK for building **MCP clients and servers** with a strong emphasis on:
+**A production-ready, enterprise-grade TypeScript SDK for building MCP servers and clients**
 
-- **Spec compliance** (MCP + JSON-RPC 2.0 envelopes)
-- **End-to-end runtime validation** (via the Standard Schema interface)
-- **Transport-agnostic architecture** (stdio, HTTP, distributed brokers, …)
-- **Enterprise-grade operability** (sessions, correlation, structured hooks, and room for instrumentation)
-
-If you’re new to MCP, start with the official docs: https://modelcontextprotocol.io/
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![MCP Spec](https://img.shields.io/badge/MCP-2025--11--25-green.svg)](https://modelcontextprotocol.io/)
 
 ---
 
-## Packages & layering
+## Why This SDK?
 
-This repo intentionally separates concerns:
+The Model Context Protocol (MCP) is revolutionizing how AI agents interact with tools, data, and services. As adoption grows, the need for **enterprise-grade infrastructure** becomes critical. This SDK was built from the ground up with a clear mission:
 
-- `model-context-protocol-specification`
-	- Canonical protocol types and **Zod v4 runtime schemas**.
-	- Runtime schemas implement the **Standard Schema** interface so they can be consumed by any Standard-Schema validator.
+> **Make it easy to build scalable, reliable, and observable MCP servers—from startup MVPs to enterprise deployments.**
 
-- `model-context-protocol-sdk` (this package)
-	- Protocol engine (request/response correlation, cancellation, progress, lifecycle)
-	- High-level `Client` and `Server` classes
-	- Feature system (tools/resources/prompts/…)
-	- Pluggable validation via Standard Schema (`schemaResolver` + `schemaValidator`)
-	- Transport interface(s) used by servers/clients
+### The Problem We Solve
 
-This split makes it easier to:
+The official MCP TypeScript SDK is excellent for getting started quickly. However, as teams scale their MCP deployments, they encounter challenges:
 
-- Version and publish “the spec” separately from “the implementation”
-- Swap validators (Zod/Valibot/ArkType/…) without rewriting the SDK
-- Keep runtime validation aligned across clients, servers, and transports
+- **Distributed deployments**: Running multiple server instances behind a load balancer
+- **Session persistence**: Maintaining client state across server restarts and horizontal scaling
+- **Observability**: Correlating logs, metrics, and traces across requests
+- **Validation**: Ensuring message integrity at protocol boundaries
+- **Extensibility**: Adding custom features without forking the protocol layer
+
+### Our Approach
+
+We took a **protocol-first** approach: instead of building a high-level abstraction that hides the protocol, we built a **modular, layered architecture** that gives you full control while reducing boilerplate.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Your Application                              │
+├─────────────────────────────────────────────────────────────────────┤
+│  Server/Client Classes  │  Feature System  │  Custom Extensions      │
+├─────────────────────────────────────────────────────────────────────┤
+│                      Protocol Layer                                  │
+│  (Connection management, request/response correlation, lifecycle)    │
+├─────────────────────────────────────────────────────────────────────┤
+│  Schema Validation (Standard Schema)  │  Session Management          │
+├─────────────────────────────────────────────────────────────────────┤
+│                      Transport Layer                                 │
+│  (Pluggable: HTTP, stdio, distributed brokers, WebRTC, etc.)        │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## How this compares to the official MCP ecosystem
+## Key Design Decisions
 
-The official MCP TypeScript SDK focuses on a high-level developer experience and bundles a set of default transports and patterns.
+### 1. Sessions as First-Class Citizens
 
-This SDK is compatible with the MCP model (JSON-RPC + lifecycle + standard method conventions), but is optimized for:
+In distributed systems, **sessions are everything**. They're your routing key, your persistence boundary, and your observability anchor.
 
-- **Hard validation on send/receive**: the protocol layer can validate every message *before it leaves* and *as it arrives*.
-- **Pluggable schemas**: Standard Schema lets you use Zod v4 schemas from `model-context-protocol-specification`, but also lets you bring your own validator.
-- **Distributed transports**: this repo includes transports designed to work in multi-node environments (see the distributed Streamable HTTP transport).
+```typescript
+// Every handler receives full session context
+tools.registerTool(myTool, async (args, context, info) => {
+  const session = context.session;
+  
+  // Access session state
+  const userPrefs = session.getValue<UserPrefs>('preferences');
+  
+  // Session metadata for observability
+  console.log(`[${session.id}] Processing tool call`);
+  
+  // Session-scoped caching, rate limiting, etc.
+  return await processWithSession(args, session);
+});
+```
 
-In practice: if you want “batteries-included examples”, use the official SDK. If you want “protocol-first building blocks” and explicit control over validation + routing + sessions in distributed deployments, this SDK is the foundation.
+**Why this matters**: In a distributed deployment, requests may be handled by different server instances. Sessions provide the continuity layer that makes this transparent to your application logic.
+
+### 2. Feature-Based Architecture
+
+Instead of monolithic handlers, we use a **composable feature system**:
+
+```typescript
+const server = new Server({
+  serverInfo: { name: "my-server", version: "1.0.0" },
+  capabilities: {
+    tools: { listChanged: true },
+    resources: { subscribe: true },
+    prompts: {}
+  }
+});
+
+// Features are self-contained and reusable
+server.addFeature(new ToolsFeature(myTools));
+server.addFeature(new ResourcesFeature(myResources));
+server.addFeature(new PromptsFeature(myPrompts));
+server.addFeature(new CompletionFeature(myCompletions));
+
+// Custom features for your domain
+server.addFeature(new MyCustomFeature());
+```
+
+**Why this matters**: Features encapsulate related functionality (handlers, validation, state). This makes it easy to test features in isolation, reuse them across servers, and extend the protocol without touching core logic.
+
+### 3. Transport-Agnostic Design
+
+The protocol layer knows nothing about HTTP, WebSockets, or message brokers. This separation enables:
+
+```typescript
+// Same server logic, different transports
+const server = new Server({ /* ... */ });
+
+// Local development with stdio
+await server.connect(stdioTransport);
+
+// Production with distributed HTTP
+await server.connect(distributedHttpTransport);
+
+// Real-time with WebRTC
+await server.connect(webRTCTransport);
+```
+
+**Why this matters**: Your business logic shouldn't change when you scale from single-node to distributed. Transport concerns stay in the transport layer.
+
+### 4. Explicit Validation with Standard Schema
+
+We don't hide validation—we make it explicit and pluggable:
+
+```typescript
+import { StandardSchemaValidator, defaultSchemaResolver } from "model-context-protocol-sdk/protocol";
+
+const server = new Server({
+  // Validate all incoming/outgoing messages
+  schemaValidator: new StandardSchemaValidator(),
+  schemaResolver: defaultSchemaResolver,
+  
+  // Fail on missing schemas (strict mode)
+  enforceSchemaValidation: true
+});
+```
+
+The **Standard Schema** interface means you can use:
+- Zod v4 schemas (shipped with `model-context-protocol-specification`)
+- Valibot, ArkType, or any Standard Schema-compatible validator
+- Your own custom schemas for extended methods
+
+**Why this matters**: Protocol boundaries are trust boundaries. Explicit validation catches issues early and documents your contract.
+
+### 5. Instrumentation-Ready Architecture
+
+Every layer is designed for observability:
+
+```typescript
+const server = new Server({
+  // Structured logging with correlation
+  logger: myLogger,
+  
+  // Custom ID generation for tracing
+  id: myIdGenerator,
+  
+  // Context extension for custom metadata
+  context: (baseContext) => ({
+    ...baseContext,
+    traceId: generateTraceId(),
+    spanId: generateSpanId()
+  })
+});
+```
+
+The protocol provides lifecycle hooks for instrumentation:
+
+- `onBeforeSendRequest` / `onAfterSendRequest`
+- `onBeforeSendNotification` / `onAfterSendNotification`
+- `onBeforeReceive` / `onAfterReceive`
+
+**Why this matters**: In production, you need to trace requests across services, measure latencies, and correlate errors. The SDK is structured to make this straightforward.
+
+---
+
+## Comparison with Official SDK
+
+| Aspect | Official SDK | This SDK |
+|--------|--------------|----------|
+| **Goal** | Quick start, batteries included | Enterprise scale, full control |
+| **Transport** | Bundled transports | Transport interface + plugins |
+| **Sessions** | Transport-managed | First-class protocol concept |
+| **Validation** | Optional, built-in | Explicit, pluggable (Standard Schema) |
+| **Handlers** | Direct method handlers | Feature-based composition |
+| **Distributed** | Single-node focus | Distributed-first design |
+| **Observability** | Basic callbacks | Structured hooks + correlation |
+
+### When to Use Which
+
+**Use the Official SDK when:**
+- Building a quick prototype or demo
+- Single-node deployment is sufficient
+- You want maximum convenience with minimal configuration
+
+**Use this SDK when:**
+- Building production infrastructure
+- Planning horizontal scaling
+- Need fine-grained control over protocol behavior
+- Integrating with existing observability stack
+- Building custom transports or extensions
 
 ---
 
 ## Installation
 
-### npm
-
 ```bash
-npm i model-context-protocol-sdk
+npm install model-context-protocol-sdk
 ```
 
-Runtime validation (recommended) requires:
+For runtime validation (recommended):
 
 ```bash
-npm i zod @standard-schema/spec
+npm install zod @standard-schema/spec
 ```
 
-Notes:
-
-- `model-context-protocol-sdk` depends on `model-context-protocol-specification`.
-- `model-context-protocol-specification` declares `zod@^4` as a peer dependency.
+> **Note**: `model-context-protocol-sdk` depends on `model-context-protocol-specification`, which provides Zod v4 schemas for all MCP message types.
 
 ---
 
-## Quick start: a minimal server
+## Quick Start
 
-The SDK includes a high-level `Server` class and a feature system.
+### Server
 
-For a runnable end-to-end example (used for e2e in this repo), see the example app: [examples/server/README.md](../../examples/server/README.md)
-
-Run it from the repo root:
-
-```bash
-pnpm nx serve server
-```
-
-```ts
-import { Server } from "model-context-protocol-sdk";
-import { ToolsFeature } from "model-context-protocol-sdk/server";
+```typescript
+import { Server, ToolsFeature } from "model-context-protocol-sdk/server";
 
 const server = new Server({
-	serverInfo: { name: "example-server", version: "1.0.0" },
-	capabilities: {
-		tools: { listChanged: true }
-	},
-	instructions: "Example MCP server"
+  serverInfo: { name: "my-server", version: "1.0.0" },
+  capabilities: {
+    tools: { listChanged: true }
+  },
+  instructions: "This server provides utility tools."
 });
 
 const tools = new ToolsFeature();
+
 tools.registerTool(
-	{
-		name: "echo",
-		description: "Echo input back as text",
-		inputSchema: {
-			type: "object",
-			properties: { text: { type: "string" } },
-			required: ["text"]
-		}
-	},
-	async (args: unknown) => {
-		const text = (args as { text?: string }).text ?? "";
-		return { content: [{ type: "text", text }] };
-	}
+  {
+    name: "greet",
+    description: "Generate a greeting",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Name to greet" }
+      },
+      required: ["name"]
+    }
+  },
+  async (args) => {
+    const { name } = args as { name: string };
+    return {
+      content: [{ type: "text", text: `Hello, ${name}!` }]
+    };
+  }
 );
 
 server.addFeature(tools);
 
-// Connect the server to a transport.
-// (In this repo you can use the distributed Streamable HTTP server transport.)
+// Connect to your transport
+await server.connect(transport);
 ```
 
----
+### Client
 
-## Quick start: a minimal client
-
-The SDK also includes a `Client` class.
-
-```ts
-import { Client } from "model-context-protocol-sdk";
+```typescript
+import { Client } from "model-context-protocol-sdk/client";
 
 const client = new Client();
+await client.connect(transport);
 
-// await client.connect(transport);
+// Initialize session
+const initResult = await client.request({
+  method: "initialize",
+  params: {
+    protocolVersion: "2025-11-25",
+    clientInfo: { name: "my-client", version: "1.0.0" },
+    capabilities: {}
+  }
+}, { route: {} });
 
-// Example request shape:
-// await client.request({ method: "tools/list", params: {} }, { route: { sessionId: "..." } });
+// Send initialized notification
+await client.notification({
+  method: "notifications/initialized",
+  params: {}
+}, { route: { sessionId } });
+
+// Call tools
+const result = await client.request({
+  method: "tools/call",
+  params: { name: "greet", arguments: { name: "World" } }
+}, { route: { sessionId } });
 ```
-
-The client API is intentionally explicit: you send MCP JSON-RPC requests and get typed results back.
 
 ---
 
-## Runtime validation (Standard Schema)
+## Architecture Deep Dive
 
-This SDK can enforce invariants and validate payload shapes:
+### The Protocol Layer
 
-- Always validates the JSON-RPC envelope when validation is enabled
-- Enforces MCP method conventions:
-	- Requests MUST NOT use `notifications/*`
-	- Notifications MUST use `notifications/*`
-- Can validate request/notification params and response/result shapes via a schema resolver
+At the heart of the SDK is the `Protocol` class—a generic JSON-RPC 2.0 implementation that handles:
 
-### Enabling strict validation
+- **Request/Response Correlation**: Matches responses to requests using `(connectionId, sessionId, requestId)` tuples
+- **Timeout Management**: Configurable timeouts with optional reset on progress
+- **Cancellation**: Full support for `notifications/cancelled`
+- **Progress**: Stream progress updates via `notifications/progress` and `_meta.progressToken`
+- **Multiple Connections**: Single protocol instance can manage multiple transport connections
 
-```ts
-import { Server } from "model-context-protocol-sdk";
+```typescript
+// Protocol is generic over message types
+class Protocol<
+  TIncomingRequest,
+  TIncomingNotification,
+  TIncomingResult,
+  TOutgoingRequest,
+  TOutgoingNotification,
+  TOutgoingResult,
+  TContext
+> {
+  // Register handlers for specific methods
+  registerHandler<T>(method: string, handler: MessageHandler<T>): void;
+  
+  // Connect to a transport
+  async connect(transport: Transport): Promise<Connection>;
+  
+  // Send messages with routing
+  async send(connection: Connection, message: Message, options: RequestOptions): Promise<Result>;
+}
+```
+
+### The Feature System
+
+Features implement the `Feature` interface:
+
+```typescript
+interface Feature</* type params */> {
+  initialize(context: FeatureContext): void;
+}
+
+interface FeatureContext {
+  registerHandler<T>(method: string, handler: MessageHandler<T>): void;
+}
+```
+
+Built-in features:
+
+| Feature | Methods Handled |
+|---------|-----------------|
+| `ToolsFeature` | `tools/list`, `tools/call` |
+| `ResourcesFeature` | `resources/list`, `resources/templates/list`, `resources/read` |
+| `PromptsFeature` | `prompts/list`, `prompts/get` |
+| `CompletionFeature` | `completion/complete` |
+| `PingFeature` | `ping` (built-in, always registered) |
+
+### Transport Interface
+
+Transports implement a minimal interface:
+
+```typescript
+interface Transport<TIncoming, TContext, TInfo, TOutgoing> {
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  send(message: TOutgoing, options?: TransportSendOptions): Promise<void>;
+  messageHandler?: TransportMessageHandler<TIncoming, TContext, TInfo>;
+}
+```
+
+This simplicity enables diverse implementations:
+
+- **Stdio**: Process-based communication
+- **HTTP Streamable**: MCP's HTTP transport spec
+- **Distributed HTTP**: Broker-backed for horizontal scaling
+- **WebRTC**: Real-time peer-to-peer
+- **Custom**: Your own transport layer
+
+### Session Management
+
+Sessions provide a consistent abstraction for request-scoped state:
+
+```typescript
+interface Session {
+  readonly id: SessionId;
+  readonly state: SessionState;
+  
+  // Key-value storage
+  getValue<T>(key: string): T | undefined;
+  setValue<T>(key: string, value: T): void;
+  deleteValue(key: string): void;
+  
+  // Protocol metadata (populated after initialization)
+  readonly protocolVersion?: string;
+  readonly clientInfo?: Implementation;
+  readonly serverInfo?: Implementation;
+  readonly clientCapabilities?: ClientCapabilities;
+  readonly serverCapabilities?: ServerCapabilities;
+  
+  // Lifecycle timestamps
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly expiredAt?: Date;
+  readonly deletedAt?: Date;
+}
+```
+
+---
+
+## Validation
+
+### Enabling Validation
+
+```typescript
 import { StandardSchemaValidator, defaultSchemaResolver } from "model-context-protocol-sdk/protocol";
 
 const server = new Server({
-	schemaValidator: new StandardSchemaValidator(),
-	schemaResolver: defaultSchemaResolver,
-	enforceSchemaValidation: true
+  schemaValidator: new StandardSchemaValidator(),
+  schemaResolver: defaultSchemaResolver,
+  enforceSchemaValidation: true // Fail on missing schemas
 });
 ```
 
-What you get:
+### What Gets Validated
 
-- Outgoing messages are validated before sending
-- Incoming messages are validated before dispatch
-- Responses/errors are validated using the originating request method (tracked per pending request)
+1. **JSON-RPC Envelope**: Always validates the basic structure
+2. **MCP Method Conventions**: 
+   - Requests must NOT use `notifications/*` methods
+   - Notifications MUST use `notifications/*` methods
+3. **Request/Response Params**: When schemas are available
+4. **Custom Methods**: Add your own schemas
 
-### Extending schemas for custom methods
+### Adding Custom Schemas
 
-If you introduce non-standard methods (e.g. `acme/foo`), you can add schemas by building a registry and resolver.
-
-```ts
+```typescript
 import { z } from "zod/v4";
-import { createSchemaResolver, StandardSchemaValidator } from "model-context-protocol-sdk/protocol";
+import { createSchemaResolver } from "model-context-protocol-sdk/protocol";
 
-const AcmeFooRequest = z.object({
-	jsonrpc: z.literal("2.0"),
-	id: z.union([z.string(), z.number()]),
-	method: z.literal("acme/foo"),
-	params: z.object({ value: z.number() })
+const MyCustomRequest = z.object({
+  jsonrpc: z.literal("2.0"),
+  id: z.union([z.string(), z.number()]),
+  method: z.literal("custom/myMethod"),
+  params: z.object({
+    data: z.string()
+  })
 });
 
-const resolver = createSchemaResolver({
-	methods: {
-		"acme/foo": { request: AcmeFooRequest }
-	}
+const customResolver = createSchemaResolver({
+  methods: {
+    "custom/myMethod": { request: MyCustomRequest }
+  }
 });
-
-// Then configure schemaValidator + schemaResolver on Client/Server/Protocol.
 ```
 
 ---
 
-## Sessions, correlation, cancellation, and progress
+## Error Handling
 
-The protocol engine provides:
+The SDK provides structured errors that map to JSON-RPC error codes:
 
-- **Request/response correlation** keyed by `(connectionId, sessionId, requestId)`
-- **Cancellation** via `notifications/cancelled`
-- **Progress** via `notifications/progress` and `_meta.progressToken`
+```typescript
+import {
+  ProtocolError,
+  InvalidRequestError,
+  MethodNotFoundError,
+  InvalidParamsError,
+  InternalError,
+  RequestTimeoutError,
+  ConnectionClosedError
+} from "model-context-protocol-sdk/protocol";
 
-In distributed deployments, the **session** becomes your primary boundary for:
-
-- Routing (which client is this?)
-- Persistence (what state must survive across nodes?)
-- Observability (tie logs/metrics/traces to a session)
-
----
-
-## Instrumentation-ready design
-
-This SDK is structured so that instrumentation can be added without forking protocol logic:
-
-- A pluggable logger interface is available in protocol options
-- Clear lifecycle hooks exist in the protocol pipeline (before/after send/receive)
-- Session and connection IDs are consistently present for correlation
-
----
-
-## Status of the `host` module
-
-The `model-context-protocol-sdk/host` export is currently a placeholder.
-Treat it as **work-in-progress** until real host-side APIs are implemented.
+// In your handlers
+tools.registerTool(myTool, async (args) => {
+  if (!isValid(args)) {
+    throw new InvalidParamsError("Invalid arguments", { received: args });
+  }
+  
+  // Errors are automatically serialized to JSON-RPC error responses
+});
+```
 
 ---
 
-## Building & testing (Nx)
+## Package Exports
+
+The SDK uses subpath exports for tree-shaking and clear boundaries:
+
+```typescript
+// Main entry - re-exports everything
+import { Server, Client, Protocol } from "model-context-protocol-sdk";
+
+// Server-specific
+import { Server, ToolsFeature, ResourcesFeature } from "model-context-protocol-sdk/server";
+
+// Client-specific
+import { Client } from "model-context-protocol-sdk/client";
+
+// Protocol layer
+import { Protocol, StandardSchemaValidator } from "model-context-protocol-sdk/protocol";
+
+// Host utilities (WIP)
+import { /* ... */ } from "model-context-protocol-sdk/host";
+```
+
+---
+
+## Ecosystem
+
+This SDK is part of a larger ecosystem:
+
+| Package | Description |
+|---------|-------------|
+| `model-context-protocol-specification` | Canonical types + Zod schemas |
+| `model-context-protocol-sdk` | This package - protocol + server + client |
+| `model-context-protocol-distributed-streamable-http-server-transport` | Broker-backed HTTP transport |
+| `model-context-protocol-opentelemetry-instrumentation` | OpenTelemetry integration |
+| `model-context-protocol-framework` | Higher-level abstractions (coming soon) |
+
+---
+
+## Building & Testing
 
 From the repo root:
 
@@ -233,4 +520,29 @@ From the repo root:
 pnpm nx build model-context-protocol-sdk
 pnpm nx test model-context-protocol-sdk
 ```
+
+---
+
+## Contributing
+
+We're building this in the open because we believe MCP infrastructure should be a community effort. Contributions welcome!
+
+- **Issues**: Bug reports, feature requests, questions
+- **PRs**: Bug fixes, documentation, new features
+- **Discussions**: Architecture decisions, use cases, best practices
+
+---
+
+## License
+
+MIT License - see [LICENSE](../../LICENSE) for details.
+
+---
+
+## Learn More
+
+- [MCP Specification](https://modelcontextprotocol.io/)
+- [Example Server](../../examples/server/README.md)
+- [Distributed HTTP Transport](../../packages/transports/server/distributed-streamable-http/README.md)
+- [E2E Tests](../../e2e/server/README.md)
 
