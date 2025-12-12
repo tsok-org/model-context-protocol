@@ -42,8 +42,29 @@
     }
   },
   "release": {
+    "projects": ["packages/*"],
+    "projectsRelationship": "independent",
     "version": {
-      "preVersionCommand": "npx nx run-many -t build"
+      "conventionalCommits": true,
+      "fallbackCurrentVersionResolver": "disk"
+    },
+    "git": {
+      "commitMessage": "release: 🚀 [skip ci]"
+    },
+    "changelog": {
+      "automaticFromRef": true,
+      "projectChangelogs": {
+        "createRelease": "github",
+        "renderOptions": {
+          "authors": true,
+          "commitReferences": true,
+          "versionTitleDate": true,
+          "applyUsernameToAuthors": true
+        }
+      }
+    },
+    "releaseTag": {
+      "pattern": "{projectName}@{version}"
     }
   }
 }
