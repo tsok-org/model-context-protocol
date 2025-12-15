@@ -18,7 +18,7 @@
     "@nx/docker": "22.2.1",
     "@nx/esbuild": "22.2.1",
     "@nx/eslint": "^22.2.1",
-    "@nx/eslint-plugin": "22.2.1",
+    "@nx/eslint-plugin": "22.2.3",
     "@nx/jest": "22.2.1",
     "@nx/js": "^22.2.1",
     "@nx/node": "^22.2.1",
