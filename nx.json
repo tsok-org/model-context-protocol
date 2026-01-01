@@ -1,18 +1,11 @@
 {
-  "installation": {
-    "version": "22.2.1",
-    "plugins": {
-      "@nx/js": "22.2.1"
-    }
-  },
+  "installation": { "version": "22.3.3", "plugins": { "@nx/js": "22.3.3" } },
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "plugins": [
     {
       "plugin": "@nx/js/typescript",
       "options": {
-        "typecheck": {
-          "targetName": "typecheck"
-        },
+        "typecheck": { "targetName": "typecheck" },
         "build": {
           "targetName": "build",
           "configName": "tsconfig.lib.json",
@@ -21,27 +14,13 @@
         }
       }
     },
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
-    },
-    {
-      "plugin": "@nx/jest/plugin",
-      "options": {
-        "targetName": "test"
-      }
-    },
+    { "plugin": "@nx/eslint/plugin", "options": { "targetName": "lint" } },
+    { "plugin": "@nx/jest/plugin", "options": { "targetName": "test" } },
     {
       "plugin": "@nx/docker",
       "options": {
-        "buildTarget": {
-          "name": "docker:build"
-        },
-        "runTarget": {
-          "name": "docker:run"
-        }
+        "buildTarget": { "name": "docker:build" },
+        "runTarget": { "name": "docker:run" }
       }
     }
   ],
@@ -69,9 +48,7 @@
       "conventionalCommits": true,
       "fallbackCurrentVersionResolver": "disk"
     },
-    "git": {
-      "commitMessage": "release: 🚀 [skip ci]"
-    },
+    "git": { "commitMessage": "release: 🚀 [skip ci]" },
     "changelog": {
       "automaticFromRef": true,
       "projectChangelogs": {
@@ -84,12 +61,7 @@
         }
       }
     },
-    "releaseTag": {
-      "pattern": "{projectName}@{version}"
-    }
+    "releaseTag": { "pattern": "{projectName}@{version}" }
   },
-  "tui": {
-    "enabled": true,
-    "autoExit": true
-  }
+  "tui": { "enabled": true, "autoExit": true }
 }
