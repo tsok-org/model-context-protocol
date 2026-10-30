@@ -22,7 +22,6 @@ paths = [
     '''(^|/)coverage/''',
     '''(^|/)tmp/''',
     '''(^|/)docs/generated/''',
-    '''(^|/)\.devcontainer/certs/''',
     '''(^|/)tests?/''',
     '''\.test\.ts$''',
     '''(^|/)\.env\.local$''',
